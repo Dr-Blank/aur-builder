@@ -1,0 +1,18 @@
+# Overlay: serve the local repo over HTTP with nginx
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.serve.yml up
+#
+# Client pacman.conf — add to /etc/pacman.conf on each client machine:
+#   [repo]
+#   SigLevel = Optional TrustAll
+#   Server = http://SERVER_IP:8080
+
+services:
+  repo-server:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./repo:/usr/share/nginx/html:ro
+    ports:
+      - "8080:80"
