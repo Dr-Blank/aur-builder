@@ -4,6 +4,15 @@ set -euo pipefail
 REPO_DIR="${REPO_DIR:-/repo}"
 REPO_NAME="${REPO_NAME:-repo}"
 PACKAGES_FILE="${PACKAGES_FILE:-/packages.txt}"
+USE_CHROOT="${USE_CHROOT:-1}"
+
+# In fast/no-chroot mode use all cores automatically; production mode respects
+# user-set MAKEFLAGS or falls back to makepkg defaults (set MAKEFLAGS=-jN to override)
+if [ "$USE_CHROOT" = "0" ] && [ -z "${MAKEFLAGS:-}" ]; then
+    export MAKEFLAGS="-j$(nproc)"
+elif [ -n "${MAKEFLAGS:-}" ]; then
+    export MAKEFLAGS
+fi
 
 # Initialize empty repo db if not present
 if [ ! -f "${REPO_DIR}/${REPO_NAME}.db" ]; then
@@ -41,12 +50,18 @@ if [ ${#pkgs[@]} -eq 0 ]; then
     exit 0
 fi
 
-echo "Building ${#pkgs[@]} package(s): ${pkgs[*]}"
+build_args=(
+    --database "$REPO_NAME"
+    --root "$REPO_DIR"
+    --no-view
+    --no-confirm
+)
 
-aur sync \
-    --database "$REPO_NAME" \
-    --root "$REPO_DIR" \
-    --no-view \
-    --no-confirm \
-    --chroot \
-    "${pkgs[@]}"
+if [ "$USE_CHROOT" = "1" ]; then
+    echo "Building ${#pkgs[@]} package(s) [clean chroot]: ${pkgs[*]}"
+    build_args+=(--chroot)
+else
+    echo "Building ${#pkgs[@]} package(s) [no chroot — fast mode]: ${pkgs[*]}"
+fi
+
+aur sync "${build_args[@]}" "${pkgs[@]}"

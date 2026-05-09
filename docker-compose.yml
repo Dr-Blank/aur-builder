@@ -21,10 +21,15 @@ services:
       # Space-separated package names — merged with packages.txt at runtime
       PACKAGES: ""
 
+      # Set to 0 to skip clean chroot — fast builds for local testing (no systemd-nspawn)
+      # Set to 1 (default) for reproducible clean chroot builds via devtools
+      USE_CHROOT: "1"
+
       # Overrides (optional):
-      # REPO_NAME: repo       # pacman repo/db name (default: repo)
-      # REPO_DIR: /repo       # path inside container (default: /repo)
+      # REPO_NAME: repo          # pacman repo/db name (default: repo)
+      # REPO_DIR: /repo          # path inside container (default: /repo)
       # PACKAGES_FILE: /packages.txt
+      # MAKEFLAGS: "-j4"         # default: -j$(nproc) — all available cores
 
 # volumes:
 #   aur-chroot:
