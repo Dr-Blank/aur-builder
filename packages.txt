@@ -1,4 +1,5 @@
-# AUR package list — one package name per line
+# AUR package list
+# one package name per line
 # Blank lines and comments are ignored
 # Inline comments also work: package-name  # optional note
 

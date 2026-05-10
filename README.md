@@ -2,12 +2,12 @@
 
 Self-hosted AUR package builder. Arch Linux container that takes a list of AUR package names, builds them using [aurutils](https://github.com/AladW/aurutils) with a devtools clean chroot, and outputs a ready-to-use pacman repository to a mounted volume.
 
-Think local [chaotic-aur](https://aur.chaotic.cx/) — you control which packages get built.
+Think self hosted [chaotic-aur](https://aur.chaotic.cx/).
 
 ## Quick Start
 
 ```bash
-# 1. List the AUR packages you want
+# 1. List the AUR packages you want in packages.txt or set PACKAGES env var
 echo "paru" >> packages.txt
 echo "yay" >> packages.txt
 
@@ -17,7 +17,7 @@ docker compose up --build
 # Packages land in ./repo/
 ```
 
-> **Note:** Requires `privileged: true` — devtools uses `systemd-nspawn` for clean chroot builds.
+> **Note:** Requires `privileged: true` as devtools uses `systemd-nspawn` for clean chroot builds.
 
 ## Configuration
 
@@ -36,7 +36,7 @@ docker compose up --build
 |---|---|
 | `./repo:/repo` | **Required.** Pacman repository output. |
 | `./packages.txt:/packages.txt:ro` | Package list input. |
-| `aur-chroot:/var/lib/aurbuild` | *Optional.* Persists build chroot (~500 MB) — speeds up subsequent runs. |
+| `aur-chroot:/var/lib/aurbuild` | *Optional.* Persists build chroot and speeds up subsequent runs. |
 
 ## Use Pre-built Image
 
@@ -44,7 +44,7 @@ docker compose up --build
 # docker-compose.yml
 services:
   aur-builder:
-    image: ghcr.io/dr-blank/aur_builder:latest
+    image: ghcr.io/dr-blank/aur_builder:latest  # built automatically on push to main
     privileged: true
     volumes:
       - ./repo:/repo
@@ -76,13 +76,3 @@ docker compose -f docker-compose.yml \
 ```
 
 Default schedule: every 6 hours. Edit `ofelia.job-run.build-aur.schedule` in `docker-compose.cron.yml`.
-
-## Releases
-
-```bash
-bash scripts/release.sh 1.0.0
-```
-
-Tags `v1.0.0`, pushes to GitHub — Actions builds and pushes image to ghcr.io automatically.
-
-VSCode: `Ctrl+Shift+B` → **Release: Tag and push new version**.

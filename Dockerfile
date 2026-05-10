@@ -1,6 +1,6 @@
 FROM archlinux:latest
 
-# Install official packages (aurutils is NOT in official repos — built below)
+# Install official packages
 RUN pacman -Syu --noconfirm && \
     pacman -S --noconfirm --needed \
         base-devel \

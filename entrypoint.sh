@@ -61,7 +61,7 @@ if [ "$USE_CHROOT" = "1" ]; then
     echo "Building ${#pkgs[@]} package(s) [clean chroot]: ${pkgs[*]}"
     build_args+=(--chroot)
 else
-    echo "Building ${#pkgs[@]} package(s) [no chroot — fast mode]: ${pkgs[*]}"
+    echo "Building ${#pkgs[@]} package(s) [no chroot]: ${pkgs[*]}"
 fi
 
 aur sync "${build_args[@]}" "${pkgs[@]}"

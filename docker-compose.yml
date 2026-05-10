@@ -1,9 +1,6 @@
 services:
   aur-builder:
-    build: .
-    # To use the pre-built image from ghcr.io instead of building locally:
-    # image: ghcr.io/YOUR_GITHUB_USER/aur_builder:latest
-
+    image: ghcr.io/dr-blank/aur-builder:latest
     # Required: systemd-nspawn (devtools clean chroot) needs elevated privileges
     privileged: true
 
@@ -14,22 +11,19 @@ services:
       # Input: package list (one name per line, # comments supported)
       - ./packages.txt:/packages.txt:ro
 
-      # Optional: persist build chroot across runs (~500 MB, speeds up subsequent builds)
+      # Optional: persist build chroot across runs (speeds up subsequent builds)
       # - aur-chroot:/var/lib/aurbuild
 
     environment:
-      # Space-separated package names — merged with packages.txt at runtime
+      # Space-separated package names - merged with packages.txt at runtime
       PACKAGES: ""
 
-      # Set to 0 to skip clean chroot — fast builds for local testing (no systemd-nspawn)
+      # Set to 0 to skip clean chroot - fast builds for local testing (no systemd-nspawn)
       # Set to 1 (default) for reproducible clean chroot builds via devtools
       USE_CHROOT: "1"
 
       # Overrides (optional):
-      # REPO_NAME: repo          # pacman repo/db name (default: repo)
-      # REPO_DIR: /repo          # path inside container (default: /repo)
-      # PACKAGES_FILE: /packages.txt
-      # MAKEFLAGS: "-j4"         # default: -j$(nproc) — all available cores
+      # MAKEFLAGS: "-j4"         # default: -j$(nproc) - all available cores
 
 # volumes:
 #   aur-chroot:
