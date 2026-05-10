@@ -14,8 +14,11 @@ elif [ -n "${MAKEFLAGS:-}" ]; then
     export MAKEFLAGS
 fi
 
+# Fix ownership of mounted repo dir (host may create it as root)
+sudo chown -R builder:builder "$REPO_DIR"
+
 # Remove stale lockfiles left by interrupted runs
-rm -f "${REPO_DIR}"/*.lck
+find "$REPO_DIR" -name "*.lck" -delete
 
 # Initialize empty repo db if not present
 if [ ! -f "${REPO_DIR}/${REPO_NAME}.db" ]; then
