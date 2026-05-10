@@ -24,7 +24,9 @@ RUN git clone https://aur.archlinux.org/aurutils.git /tmp/aurutils && \
 USER root
 COPY pacman.conf /etc/pacman.conf
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh && \
+RUN mkdir -p /etc/aurutils && \
+    cp /etc/pacman.conf /etc/aurutils/pacman-x86_64.conf && \
+    chmod +x /entrypoint.sh && \
     mkdir -p /repo && chown builder:builder /repo
 
 VOLUME ["/repo"]

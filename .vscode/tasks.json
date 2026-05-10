@@ -34,6 +34,26 @@
                 "reveal": "always",
                 "panel": "shared"
             }
+        },
+        {
+            "label": "Test: Build image and run with USE_CHROOT=0",
+            "type": "shell",
+            "command": "mkdir -p ${workspaceFolder}/repo && rm -f ${workspaceFolder}/repo/*.lck && docker build -t aur-builder ${workspaceFolder} && docker run --rm --privileged -v ${workspaceFolder}/repo:/repo -e USE_CHROOT=0 -e PACKAGES=${input:testPackages} aur-builder",
+            "problemMatcher": [],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared",
+                "focus": true
+            }
+        }
+    ],
+    "inputs": [
+        {
+            "id": "testPackages",
+            "type": "promptString",
+            "description": "Space-separated AUR package names to build",
+            "default": "yay"
         }
     ]
 }

@@ -14,10 +14,16 @@ elif [ -n "${MAKEFLAGS:-}" ]; then
     export MAKEFLAGS
 fi
 
+# Remove stale lockfiles left by interrupted runs
+rm -f "${REPO_DIR}"/*.lck
+
 # Initialize empty repo db if not present
 if [ ! -f "${REPO_DIR}/${REPO_NAME}.db" ]; then
     repo-add "${REPO_DIR}/${REPO_NAME}.db.tar.gz"
 fi
+
+# Sync package databases so pacman can resolve deps (including local [repo])
+sudo pacman -Sy --noconfirm
 
 # Collect packages from file and env var, skip blanks and comments
 declare -A seen
