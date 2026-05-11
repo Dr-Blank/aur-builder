@@ -1,0 +1,38 @@
+# Overlay: serve repo over HTTP via Nginx Proxy Manager (NPM)
+#
+# Use this instead of docker-compose.serve.yml if you already run NPM.
+# No host port is exposed as NPM proxies to the container internally.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.npm.yml up
+#
+# Setup:
+#   1. Find your NPM Docker network name:
+#        docker network ls | grep -i nginx
+#      Common names: nginx-proxy-manager_default, npm_default, nginxproxymanager_default
+#
+#   2. Replace "nginx-proxy-manager_default" below with your actual network name.
+#
+#   3. In NPM UI → Proxy Hosts → Add:
+#        Forward Hostname: repo-server
+#        Forward Port:     80
+#        (enable SSL / set domain as needed)
+#
+#   4. Add to /etc/pacman.conf on each client:
+#        [aur]
+#        SigLevel = Optional TrustAll
+#        Server = http(s)://YOUR_DOMAIN_OR_IP
+
+services:
+  repo-server:
+    image: nginx:alpine
+    restart: unless-stopped
+    volumes:
+      - ./repo:/usr/share/nginx/html:ro
+    networks:
+      - npm_network
+
+networks:
+  npm_network:
+    name: nginx-proxy-manager_default  # change to match your NPM network
+    external: true
