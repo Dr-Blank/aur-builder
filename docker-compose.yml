@@ -24,6 +24,7 @@ services:
 
       # Overrides (optional):
       # MAKEFLAGS: "-j4"         # default: -j$(nproc) - all available cores
+      # SKIP_PGP_CHECK: "1"      # skip GPG signature checks (fallback if keyserver unreachable)
 
 # volumes:
 #   aur-chroot:

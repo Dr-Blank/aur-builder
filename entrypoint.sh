@@ -5,6 +5,7 @@ REPO_DIR="${REPO_DIR:-/repo}"
 REPO_NAME="${REPO_NAME:-repo}"
 PACKAGES_FILE="${PACKAGES_FILE:-/packages.txt}"
 USE_CHROOT="${USE_CHROOT:-1}"
+SKIP_PGP_CHECK="${SKIP_PGP_CHECK:-0}"
 
 # In fast/no-chroot mode use all cores automatically; production mode respects
 # user-set MAKEFLAGS or falls back to makepkg defaults (set MAKEFLAGS=-jN to override)
@@ -71,6 +72,11 @@ if [ "$USE_CHROOT" = "1" ]; then
     build_args+=(--chroot)
 else
     echo "Building ${#pkgs[@]} package(s) [no chroot]: ${pkgs[*]}"
+fi
+
+if [ "$SKIP_PGP_CHECK" = "1" ]; then
+    echo "Warning: PGP signature checks disabled (SKIP_PGP_CHECK=1)"
+    build_args+=(--makepkg-args --skippgpcheck)
 fi
 
 aur sync "${build_args[@]}" "${pkgs[@]}"

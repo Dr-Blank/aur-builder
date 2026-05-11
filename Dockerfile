@@ -21,6 +21,12 @@ RUN git clone https://aur.archlinux.org/aurutils.git /tmp/aurutils && \
     makepkg -si --noconfirm && \
     rm -rf /tmp/aurutils
 
+# Configure GPG to auto-fetch missing signing keys from keyserver
+RUN mkdir -p /home/builder/.gnupg && \
+    chmod 700 /home/builder/.gnupg && \
+    echo "keyserver-options auto-key-retrieve" >> /home/builder/.gnupg/gpg.conf && \
+    echo "keyserver hkps://keyserver.ubuntu.com" >> /home/builder/.gnupg/gpg.conf
+
 USER root
 COPY pacman.conf /etc/pacman.conf
 COPY entrypoint.sh /entrypoint.sh
