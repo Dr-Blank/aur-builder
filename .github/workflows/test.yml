@@ -1,0 +1,64 @@
+name: Test Package Build
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Cache pacman downloaded packages and AUR git clones between runs.
+      # Key includes package name so cache is isolated per test target.
+      - name: Restore build caches
+        uses: actions/cache@v4
+        with:
+          path: |
+            /tmp/aur-cache/pacman
+            /tmp/aur-cache/aurutils
+          key: aur-build-cache-${{ runner.os }}-yay-${{ hashFiles('Dockerfile') }}
+          restore-keys: |
+            aur-build-cache-${{ runner.os }}-yay-
+            aur-build-cache-${{ runner.os }}-
+
+      - name: Build image from local Dockerfile
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          load: true
+          tags: aur-builder:ci
+          # Reuse layers cached by docker.yml build job
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Prepare cache and output dirs
+        run: |
+          mkdir -p /tmp/aur-cache/pacman /tmp/aur-cache/aurutils /tmp/repo
+          # builder user inside the container has uid 1000
+          sudo chown -R 1000:1000 /tmp/aur-cache /tmp/repo
+
+      - name: Build yay (one-shot, no chroot)
+        run: |
+          docker run --rm \
+            -v /tmp/repo:/repo \
+            -v /tmp/aur-cache/pacman:/var/cache/pacman/pkg \
+            -v /tmp/aur-cache/aurutils:/home/builder/.cache/aurutils \
+            -e PACKAGES=yay \
+            -e USE_CHROOT=0 \
+            -e CRON="" \
+            aur-builder:ci
+
+      - name: Verify yay package was built
+        run: |
+          echo "=== Built packages ==="
+          ls -lh /tmp/repo/*.pkg.tar.zst
+          ls /tmp/repo/yay-*.pkg.tar.zst
