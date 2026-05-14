@@ -23,6 +23,7 @@ docker compose up --build
 
 | Variable | Default | Description |
 |---|---|---|
+| `CRON` | `"0 2 * * *"` | Cron schedule(s) for automatic builds. Use `\|` to separate multiple. Empty = one-shot. |
 | `PACKAGES` | `""` | Space-separated package names (merged with packages.txt) |
 | `PACKAGES_FILE` | `/packages.txt` | Path to package list inside container |
 | `REPO_NAME` | `repo` | Pacman repo/db name |
@@ -67,12 +68,14 @@ SigLevel = Optional TrustAll
 Server = http://YOUR_SERVER:8080
 ```
 
-### Scheduled builds (ofelia)
+### Scheduled builds
 
-```bash
-docker compose -f docker-compose.yml \
-               -f docker-compose.serve.yml \
-               -f docker-compose.cron.yml up -d
+Set `CRON` to a cron expression. Default is `0 2 * * *` (daily at 2 AM). Use `|` to run on multiple schedules:
+
+```yaml
+environment:
+  CRON: "0 2 * * *"               # daily at 2 AM
+  CRON: "0 2 * * *|0 14 * * *"   # 2 AM and 2 PM
 ```
 
-Default schedule: every 6 hours. Edit `ofelia.job-run.build-aur.schedule` in `docker-compose.cron.yml`.
+One-shot mode (run once and exit): set `CRON: ""` and use `docker compose run aur-builder`.

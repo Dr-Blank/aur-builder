@@ -1,0 +1,16 @@
+# Override: build from local source for development/testing.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+#
+# Builds the local Dockerfile instead of pulling ghcr.io image.
+# Defaults to one-shot mode (CRON="") and no-chroot for fast iteration.
+
+services:
+  aur-builder:
+    build: .
+    image: aur-builder:dev
+    pull_policy: build
+    environment:
+      CRON: ""        # one-shot: build and exit
+      USE_CHROOT: "0" # skip systemd-nspawn for faster local builds

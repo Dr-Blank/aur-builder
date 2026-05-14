@@ -1,82 +1,29 @@
 #!/bin/bash
 set -euo pipefail
 
-REPO_DIR="${REPO_DIR:-/repo}"
-REPO_NAME="${REPO_NAME:-repo}"
-PACKAGES_FILE="${PACKAGES_FILE:-/packages.txt}"
-USE_CHROOT="${USE_CHROOT:-1}"
-SKIP_PGP_CHECK="${SKIP_PGP_CHECK:-0}"
+CRON="${CRON:-}"
+RUN_ON_START="${RUN_ON_START:-0}"
 
-# In fast/no-chroot mode use all cores automatically; production mode respects
-# user-set MAKEFLAGS or falls back to makepkg defaults (set MAKEFLAGS=-jN to override)
-if [ "$USE_CHROOT" = "0" ] && [ -z "${MAKEFLAGS:-}" ]; then
-    export MAKEFLAGS="-j$(nproc)"
-elif [ -n "${MAKEFLAGS:-}" ]; then
-    export MAKEFLAGS
+if [ -z "$CRON" ]; then
+    exec /build.sh
 fi
 
-# Fix ownership of mounted repo dir (host may create it as root)
-sudo chown -R builder:builder "$REPO_DIR"
-
-# Remove stale lockfiles left by interrupted runs
-find "$REPO_DIR" -name "*.lck" -delete
-
-# Initialize empty repo db if not present
-if [ ! -f "${REPO_DIR}/${REPO_NAME}.db" ]; then
-    repo-add "${REPO_DIR}/${REPO_NAME}.db.tar.gz"
+if [ "$RUN_ON_START" = "1" ]; then
+    echo "Running initial build before starting scheduler..."
+    /build.sh
 fi
 
-# Sync package databases so pacman can resolve deps (including local [repo])
-sudo pacman -Sy --noconfirm
+# Schedule mode: parse |-separated cron expressions into a supercronic crontab
+crontab_file="$(mktemp)"
+IFS='|' read -ra schedules <<< "$CRON"
+for schedule in "${schedules[@]}"; do
+    schedule="${schedule#"${schedule%%[![:space:]]*}"}"  # ltrim
+    schedule="${schedule%"${schedule##*[![:space:]]}"}"  # rtrim
+    [[ -z "$schedule" ]] && continue
+    echo "$schedule /build.sh"
+done > "$crontab_file"
 
-# Collect packages from file and env var, skip blanks and comments
-declare -A seen
-pkgs=()
+echo "Scheduled builds:"
+cat "$crontab_file"
 
-if [ -f "$PACKAGES_FILE" ]; then
-    while IFS= read -r line; do
-        line="${line%%#*}"   # strip inline comments
-        line="${line//[[:space:]]/}"  # strip whitespace
-        [[ -z "$line" ]] && continue
-        if [[ -z "${seen[$line]+x}" ]]; then
-            seen[$line]=1
-            pkgs+=("$line")
-        fi
-    done < "$PACKAGES_FILE"
-fi
-
-if [ -n "${PACKAGES:-}" ]; then
-    for pkg in $PACKAGES; do
-        [[ -z "$pkg" ]] && continue
-        if [[ -z "${seen[$pkg]+x}" ]]; then
-            seen[$pkg]=1
-            pkgs+=("$pkg")
-        fi
-    done
-fi
-
-if [ ${#pkgs[@]} -eq 0 ]; then
-    echo "No packages specified. Mount packages.txt or set PACKAGES env var."
-    exit 0
-fi
-
-build_args=(
-    --database "$REPO_NAME"
-    --root "$REPO_DIR"
-    --no-view
-    --no-confirm
-)
-
-if [ "$USE_CHROOT" = "1" ]; then
-    echo "Building ${#pkgs[@]} package(s) [clean chroot]: ${pkgs[*]}"
-    build_args+=(--chroot)
-else
-    echo "Building ${#pkgs[@]} package(s) [no chroot]: ${pkgs[*]}"
-fi
-
-if [ "$SKIP_PGP_CHECK" = "1" ]; then
-    echo "Warning: PGP signature checks disabled (SKIP_PGP_CHECK=1)"
-    build_args+=(--makepkg-args --skippgpcheck)
-fi
-
-aur sync "${build_args[@]}" "${pkgs[@]}"
+exec supercronic "$crontab_file"

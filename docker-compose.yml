@@ -3,6 +3,7 @@ services:
     image: ghcr.io/dr-blank/aur-builder:latest
     # Required: systemd-nspawn (devtools clean chroot) needs elevated privileges
     privileged: true
+    restart: unless-stopped
 
     volumes:
       # Output: pacman repository (packages + db files land here)
@@ -15,6 +16,16 @@ services:
       # - aur-chroot:/var/lib/aurbuild
 
     environment:
+      # Cron schedule(s) for automatic builds. Use | to separate multiple schedules.
+      # Leave empty to run once and exit (one-shot mode).
+      # Examples:
+      #   CRON: "0 2 * * *"                  # daily at 2 AM
+      #   CRON: "0 2 * * *|0 14 * * *"       # 2 AM and 2 PM
+      CRON: "0 2 * * *"
+
+      # Set to 1 to run a build immediately on container start before the cron schedule takes over.
+      RUN_ON_START: "1"
+
       # Space-separated package names - merged with packages.txt at runtime
       PACKAGES: ""
 

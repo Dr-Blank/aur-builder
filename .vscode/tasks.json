@@ -14,9 +14,9 @@
             }
         },
         {
-            "label": "Docker: Build image locally",
+            "label": "Docker: Build image (local)",
             "type": "shell",
-            "command": "docker compose build",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml build",
             "problemMatcher": [],
             "group": "build",
             "presentation": {
@@ -25,26 +25,26 @@
             }
         },
         {
-            "label": "Docker: Run build (one-shot)",
+            "label": "Docker: Run one-shot (local build, no chroot)",
             "type": "shell",
-            "command": "docker compose up --build",
-            "problemMatcher": [],
-            "group": "test",
-            "presentation": {
-                "reveal": "always",
-                "panel": "shared"
-            }
-        },
-        {
-            "label": "Test: Build image and run with USE_CHROOT=0",
-            "type": "shell",
-            "command": "mkdir -p ${workspaceFolder}/repo && rm -f ${workspaceFolder}/repo/*.lck && docker build -t aur-builder ${workspaceFolder} && docker run --rm --privileged -v ${workspaceFolder}/repo:/repo -e USE_CHROOT=0 -e PACKAGES=${input:testPackages} aur-builder",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml run --rm -e PACKAGES=${input:testPackages} aur-builder",
             "problemMatcher": [],
             "group": "test",
             "presentation": {
                 "reveal": "always",
                 "panel": "shared",
                 "focus": true
+            }
+        },
+        {
+            "label": "Docker: Run scheduled mode (local build)",
+            "type": "shell",
+            "command": "docker compose -f docker-compose.yml -f docker-compose.dev.yml up --build",
+            "problemMatcher": [],
+            "group": "test",
+            "presentation": {
+                "reveal": "always",
+                "panel": "shared"
             }
         }
     ],

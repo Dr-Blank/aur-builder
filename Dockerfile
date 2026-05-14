@@ -6,7 +6,8 @@ RUN pacman -Syu --noconfirm && \
         base-devel \
         git \
         devtools \
-        sudo && \
+        sudo \
+        curl && \
     rm -rf /var/cache/pacman/pkg/*
 
 # Create build user (makepkg refuses to run as root)
@@ -30,9 +31,14 @@ RUN mkdir -p /home/builder/.gnupg && \
 USER root
 COPY pacman.conf /etc/pacman.conf
 COPY entrypoint.sh /entrypoint.sh
-RUN mkdir -p /etc/aurutils && \
+COPY build.sh /build.sh
+RUN curl -sSLf \
+        "https://github.com/aptible/supercronic/releases/latest/download/supercronic-linux-amd64" \
+        -o /usr/local/bin/supercronic && \
+    chmod +x /usr/local/bin/supercronic && \
+    mkdir -p /etc/aurutils && \
     cp /etc/pacman.conf /etc/aurutils/pacman-x86_64.conf && \
-    chmod +x /entrypoint.sh && \
+    chmod +x /entrypoint.sh /build.sh && \
     mkdir -p /repo && chown builder:builder /repo
 
 VOLUME ["/repo"]
