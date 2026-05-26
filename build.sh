@@ -7,19 +7,31 @@ PACKAGES_FILE="${PACKAGES_FILE:-/packages.txt}"
 USE_CHROOT="${USE_CHROOT:-1}"
 SKIP_PGP_CHECK="${SKIP_PGP_CHECK:-0}"
 
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+
+log "=== AUR Builder starting ==="
+log "REPO_DIR=$REPO_DIR"
+log "REPO_NAME=$REPO_NAME"
+log "USE_CHROOT=$USE_CHROOT"
+log "SKIP_PGP_CHECK=$SKIP_PGP_CHECK"
+
 if [ "$USE_CHROOT" = "0" ] && [ -z "${MAKEFLAGS:-}" ]; then
     export MAKEFLAGS="-j$(nproc)"
 elif [ -n "${MAKEFLAGS:-}" ]; then
     export MAKEFLAGS
 fi
 
+log "MAKEFLAGS=${MAKEFLAGS:-<unset>}"
+
 sudo chown -R builder:builder "$REPO_DIR"
 find "$REPO_DIR" -name "*.lck" -delete
 
 if [ ! -f "${REPO_DIR}/${REPO_NAME}.db" ]; then
+    log "No repo DB found, initializing: ${REPO_DIR}/${REPO_NAME}.db"
     repo-add "${REPO_DIR}/${REPO_NAME}.db.tar.gz"
 fi
 
+log "Syncing pacman databases..."
 sudo pacman -Sy --noconfirm
 
 declare -A seen
@@ -48,9 +60,11 @@ if [ -n "${PACKAGES:-}" ]; then
 fi
 
 if [ ${#pkgs[@]} -eq 0 ]; then
-    echo "No packages specified. Mount packages.txt or set PACKAGES env var."
+    log "No packages specified. Mount packages.txt or set PACKAGES env var."
     exit 0
 fi
+
+log "Packages to build (${#pkgs[@]}): ${pkgs[*]}"
 
 build_args=(
     --database "$REPO_NAME"
@@ -60,15 +74,20 @@ build_args=(
 )
 
 if [ "$USE_CHROOT" = "1" ]; then
-    echo "Building ${#pkgs[@]} package(s) [clean chroot]: ${pkgs[*]}"
+    log "Build mode: clean chroot"
     build_args+=(--chroot)
 else
-    echo "Building ${#pkgs[@]} package(s) [no chroot]: ${pkgs[*]}"
+    log "Build mode: no chroot"
 fi
 
 if [ "$SKIP_PGP_CHECK" = "1" ]; then
-    echo "Warning: PGP signature checks disabled (SKIP_PGP_CHECK=1)"
+    log "PGP signature checks: disabled (SKIP_PGP_CHECK=1)"
     build_args+=(--makepkg-args --skippgpcheck)
 fi
 
-aur sync "${build_args[@]}" "${pkgs[@]}"
+log "aur sync args: ${build_args[*]}"
+log "--- aur sync output ---"
+aur sync "${build_args[@]}" "${pkgs[@]}" || { rc=$?; log "ERROR: aur sync failed (exit ${rc})"; exit "${rc}"; }
+log "--- aur sync done ---"
+
+log "=== Build complete ==="

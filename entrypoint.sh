@@ -4,13 +4,15 @@ set -euo pipefail
 CRON="${CRON:-}"
 RUN_ON_START="${RUN_ON_START:-0}"
 
+log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
+
 if [ -z "$CRON" ]; then
     exec /build.sh
 fi
 
 if [ "$RUN_ON_START" = "1" ]; then
-    echo "Running initial build before starting scheduler..."
-    /build.sh
+    log "Running initial build before starting scheduler..."
+    /build.sh || log "Initial build failed (exit $?), scheduler starting anyway"
 fi
 
 # Schedule mode: parse |-separated cron expressions into a supercronic crontab
@@ -23,7 +25,7 @@ for schedule in "${schedules[@]}"; do
     echo "$schedule /build.sh"
 done > "$crontab_file"
 
-echo "Scheduled builds:"
+log "Scheduled builds:"
 cat "$crontab_file"
 
 exec supercronic "$crontab_file"
