@@ -3,6 +3,20 @@ set -euo pipefail
 
 VERSION="${1:-}"
 
+# Show commits since last tag to help choose semver bump
+LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+if [ -n "$LAST_TAG" ]; then
+    echo ""
+    echo "Commits since $LAST_TAG:"
+    git log "${LAST_TAG}..HEAD" --oneline
+    echo ""
+else
+    echo ""
+    echo "No previous tags found — showing all commits:"
+    git log --oneline
+    echo ""
+fi
+
 if [ -z "$VERSION" ]; then
     read -rp "Version (e.g. 1.0.0): " VERSION
 fi
