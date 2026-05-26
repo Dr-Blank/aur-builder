@@ -66,6 +66,29 @@ jobs:
           ls -lh /tmp/repo/*.pkg.tar.zst
           ls /tmp/repo/yay-*.pkg.tar.zst
 
+      - name: Prepare chroot output dir
+        run: |
+          mkdir -p /tmp/repo-chroot
+          sudo chown -R 1000:1000 /tmp/repo-chroot
+
+      - name: Build yay (with chroot)
+        run: |
+          docker run --rm --privileged \
+            -v /tmp/repo-chroot:/repo \
+            -v /tmp/aur-cache/pacman:/var/cache/pacman/pkg \
+            -v /tmp/aur-cache/aurutils:/home/builder/.cache/aurutils \
+            -v /tmp/aur-cache/go-build:/home/builder/.cache/go-build \
+            -e PACKAGES=yay \
+            -e USE_CHROOT=1 \
+            -e CRON="" \
+            aur-builder:ci
+
+      - name: Verify yay package was built (chroot)
+        run: |
+          echo "=== Built packages (chroot) ==="
+          ls -lh /tmp/repo-chroot/*.pkg.tar.zst
+          ls /tmp/repo-chroot/yay-*.pkg.tar.zst
+
   build:
     needs: test
     runs-on: ubuntu-latest
