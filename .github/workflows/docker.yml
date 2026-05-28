@@ -34,6 +34,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set lowercase cache image
+        run: echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}:buildcache" >> $GITHUB_ENV
+
       - name: Restore build caches
         uses: actions/cache@v4
         with:
@@ -125,6 +128,9 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set lowercase cache image
+        run: echo "CACHE_IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}:buildcache" >> $GITHUB_ENV
 
       - name: Extract metadata (tags, labels)
         id: meta
