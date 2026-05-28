@@ -6,6 +6,11 @@ RUN_ON_START="${RUN_ON_START:-0}"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
+# systemd-nspawn (devtools clean chroot) requires /etc/machine-id
+if [ ! -s /etc/machine-id ]; then
+    sudo systemd-machine-id-setup 2>/dev/null || true
+fi
+
 if [ -z "$CRON" ]; then
     exec /build.sh
 fi

@@ -3,6 +3,7 @@ services:
     image: ghcr.io/dr-blank/aur-builder:latest
     # Required: systemd-nspawn (devtools clean chroot) needs elevated privileges
     privileged: true
+    tty: true
     restart: unless-stopped
 
     volumes:
@@ -12,8 +13,21 @@ services:
       # Input: package list (one name per line, # comments supported)
       - ./packages.txt:/packages.txt:ro
 
-      # Optional: persist build chroot across runs (speeds up subsequent builds)
+      # Persist pacman download cache — avoids re-downloading deps on every build
+      # Works for both USE_CHROOT=0 and USE_CHROOT=1 (host-side installs)
+      - pacman-cache:/var/cache/pacman/pkg
+
+      # Optional: persist build chroot across runs (USE_CHROOT=1 only)
+      # Caches the chroot environment itself; speeds up clean chroot builds
       # - aur-chroot:/var/lib/aurbuild
+
+    tmpfs:
+      # systemd-nspawn (devtools) creates bind mounts under /run/systemd/nspawn/propagate/
+      # during chroot builds. Docker's overlay fs is seen as a "disk filesystem" by
+      # systemd's umount safety check, causing cleanup to fail with exit 1.
+      # tmpfs here makes statfs() return TMPFS_MAGIC → cleanup succeeds.
+      - /run/systemd/nspawn:exec,mode=755
+      - /run/systemd/journal:exec,mode=755
 
     environment:
       # Cron schedule(s) for automatic builds. Use | to separate multiple schedules.
@@ -37,5 +51,6 @@ services:
       # MAKEFLAGS: "-j4"         # default: -j$(nproc) - all available cores
       # SKIP_PGP_CHECK: "1"      # skip GPG signature checks (fallback if keyserver unreachable)
 
-# volumes:
-#   aur-chroot:
+volumes:
+  pacman-cache:
+  # aur-chroot:

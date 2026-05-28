@@ -7,7 +7,8 @@ RUN pacman -Syu --noconfirm && \
         git \
         devtools \
         sudo \
-        curl && \
+        curl \
+        unzip && \
     rm -rf /var/cache/pacman/pkg/*
 
 # Create build user (makepkg refuses to run as root)
