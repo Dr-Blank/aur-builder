@@ -81,6 +81,7 @@ jobs:
       - name: Build yay (with chroot)
         run: |
           docker run --rm --privileged \
+            --tmpfs /run/systemd/nspawn:rw,mode=0755 \
             -v /tmp/repo-chroot:/repo \
             -v /tmp/aur-cache/pacman:/var/cache/pacman/pkg \
             -v /tmp/aur-cache/aurutils:/home/builder/.cache/aurutils \
