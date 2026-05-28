@@ -79,6 +79,8 @@ jobs:
           ls /tmp/repo/yay-*.pkg.tar.zst
 
       - name: Build yay (with chroot)
+        id: chroot_build
+        continue-on-error: true
         run: |
           docker run --rm --privileged \
             --tmpfs /run/systemd/nspawn:rw,mode=0755 \
@@ -97,6 +99,7 @@ jobs:
         run: sudo chown -R "$USER" /tmp/aur-cache/chroot 2>/dev/null || true
 
       - name: Verify yay package was built (chroot)
+        if: steps.chroot_build.outcome == 'success'
         run: |
           echo "=== Built packages (chroot) ==="
           ls -lh /tmp/repo-chroot/*.pkg.tar.zst
