@@ -21,6 +21,11 @@ services:
       # Caches the chroot environment itself; speeds up clean chroot builds
       # - aur-chroot:/var/lib/aurbuild
 
+      # Optional: custom mirrorlist — override the default Arch mirrors
+      # Generate with reflector or pick from https://archlinux.org/mirrorlist/
+      # To use pacoloco as a caching proxy, see docker-compose.pacoloco.yml
+      # - ./mirrorlist:/etc/pacman.d/mirrorlist:ro
+
     tmpfs:
       # systemd-nspawn (devtools) creates bind mounts under /run/systemd/nspawn/propagate/
       # during chroot builds. Docker's overlay fs is seen as a "disk filesystem" by
