@@ -6,6 +6,7 @@ REPO_NAME="${REPO_NAME:-repo}"
 PACKAGES_FILE="${PACKAGES_FILE:-/packages.txt}"
 USE_CHROOT="${USE_CHROOT:-1}"
 SKIP_PGP_CHECK="${SKIP_PGP_CHECK:-0}"
+EXTRA_PACKAGES="${EXTRA_PACKAGES:-}"
 
 log() { echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*"; }
 
@@ -14,6 +15,7 @@ log "REPO_DIR=$REPO_DIR"
 log "REPO_NAME=$REPO_NAME"
 log "USE_CHROOT=$USE_CHROOT"
 log "SKIP_PGP_CHECK=$SKIP_PGP_CHECK"
+log "EXTRA_PACKAGES=${EXTRA_PACKAGES:-<none>}"
 
 if [ "$USE_CHROOT" = "0" ] && [ -z "${MAKEFLAGS:-}" ]; then
     export MAKEFLAGS="-j$(nproc)"
@@ -76,8 +78,16 @@ build_args=(
 if [ "$USE_CHROOT" = "1" ]; then
     log "Build mode: clean chroot"
     build_args+=(--chroot)
+    if [ -n "$EXTRA_PACKAGES" ]; then
+        log "Seeding chroot with extra packages: $EXTRA_PACKAGES"
+        aur chroot -c -- $EXTRA_PACKAGES
+    fi
 else
     log "Build mode: no chroot"
+    if [ -n "$EXTRA_PACKAGES" ]; then
+        log "Installing extra packages (no-chroot mode): $EXTRA_PACKAGES"
+        sudo pacman -S --noconfirm --needed $EXTRA_PACKAGES
+    fi
 fi
 
 if [ "$SKIP_PGP_CHECK" = "1" ]; then

@@ -56,6 +56,11 @@ services:
       # MAKEFLAGS: "-j4"         # default: -j$(nproc) - all available cores
       # SKIP_PGP_CHECK: "1"      # skip GPG signature checks (fallback if keyserver unreachable)
 
+      # Space-separated pacman packages to install before building
+      # Installed into the chroot (USE_CHROOT=1) or directly on the host (USE_CHROOT=0).
+      # Use this for build-time deps a specific AUR package needs (e.g. perl-podlators for pod2man).
+      # EXTRA_PACKAGES: "perl-podlators"
+
 volumes:
   pacman-cache:
   # aur-chroot:
