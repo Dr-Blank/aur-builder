@@ -28,8 +28,34 @@ docker compose up --build
 | `PACKAGES_FILE` | `/packages.txt` | Path to package list inside container |
 | `REPO_NAME` | `repo` | Pacman repo/db name |
 | `REPO_DIR` | `/repo` | Repo output path inside container |
+| `CHECK_STALE_DEPS` | `1` | Rebuild packages broken by dependency soname bumps. `0` disables. |
+| `STALE_EXCLUDE` | `""` | Space-separated packages never auto-rebuilt by that check. |
 
 `packages.txt` supports blank lines and `#` comments.
+
+## Stale dependency rebuilds
+
+`aur sync` decides what to build by comparing versions, so it never notices when a
+dependency's soname changes underneath a package. Arch moves `libbluray.so.3` to
+`libbluray.so.4`, the AUR `pkgver` does not change, and the package sitting in your
+repo keeps linking against a soname nothing provides:
+
+```
+warning: cannot resolve "libbluray.so=3-64", a dependency of "ffmpeg-libfdk_aac"
+```
+
+That package is then uninstallable and unupgradable until it is rebuilt by hand.
+
+On each run, after the normal sync, every package in the repo is checked: do all of
+its recorded dependencies still resolve? Anything that fails is rebuilt. The check
+costs milliseconds per package, so a rebuild only fires when something is genuinely
+broken — a few times a year, not on every run.
+
+Rebuilds also bump `pkgrel` (`9.0.1-1` becomes `9.0.1-1.1`, the same scheme Arch uses
+for its own rebuilds). Without that, the rebuilt package carries the version clients
+already have installed, so `pacman -Syu` would report nothing to upgrade and leave the
+broken copy in place. A later genuine AUR update still takes precedence
+(`9.0.1-2` > `9.0.1-1.1`).
 
 ## Volumes
 

@@ -52,6 +52,15 @@ services:
       # Set to 1 (default) for reproducible clean chroot builds via devtools
       USE_CHROOT: "1"
 
+      # Detect packages broken by dependency soname bumps and force-rebuild them.
+      # aur sync only rebuilds on an AUR version change, which misses the case where
+      # Arch moves libfoo.so.3 to libfoo.so.4 and the AUR pkgver stays the same -
+      # the cached package then fails to install on clients. The check is a few
+      # milliseconds per package; a rebuild only happens when something is broken.
+      # Rebuilds bump pkgrel (1 -> 1.1) so clients actually see the fix as an upgrade.
+      # CHECK_STALE_DEPS: "1"    # default: 1 (enabled). Set to 0 to disable.
+      # STALE_EXCLUDE: "ffmpeg-libfdk_aac"   # space-separated, never auto-rebuilt
+
       # Overrides (optional):
       # MAKEFLAGS: "-j4"         # default: -j$(nproc) - all available cores
       # SKIP_PGP_CHECK: "1"      # skip GPG signature checks (fallback if keyserver unreachable)
