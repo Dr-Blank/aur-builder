@@ -93,9 +93,12 @@ rebuild_stale_packages() {
 
     log "Force-rebuilding ${#stale[@]} stale pkgbase(s): ${!stale[*]}"
 
+    # --syncdeps matches what aur sync passes to aur build by default; without it
+    # makepkg cannot install build dependencies and the rebuild fails outright.
     rebuild_args=(
         --database "$REPO_NAME"
         --root "$REPO_DIR"
+        --syncdeps
         --force
         --no-confirm
     )
@@ -137,6 +140,11 @@ rebuild_stale_packages() {
 
     return "$rc"
 }
+
+# Let the test suite source the functions above without running a build.
+if [ "${AUR_BUILDER_LIB_ONLY:-0}" = "1" ]; then
+    return 0 2>/dev/null || exit 0
+fi
 
 log "=== AUR Builder starting ==="
 log "REPO_DIR=$REPO_DIR"
