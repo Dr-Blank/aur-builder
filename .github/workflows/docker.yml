@@ -94,13 +94,16 @@ jobs:
           # Replace the repo entry for yay with one that depends on a soname
           # nothing provides, at a version high enough that aur sync skips it.
           # Only the stale check can rebuild it from here.
-          mkdir -p /tmp/fixture && cd /tmp/fixture
-          printf 'pkgname = yay\npkgbase = yay\npkgver = 99.0.0-1\npkgdesc = stale fixture\nurl = http://example.invalid\nbuilddate = 0\npackager = ci\nsize = 0\narch = x86_64\ndepend = libbluray.so=3-64\n' > .PKGINFO
-          tar -czf /tmp/repo/yay-99.0.0-1-x86_64.pkg.tar.gz .PKGINFO
-          rm -f /tmp/repo/yay-*.pkg.tar.zst
+          # /tmp/repo belongs to uid 1000 (the in-container builder), not the
+          # runner user, so the fixture is written from inside the container.
+          mkdir -p /tmp/fixture
+          printf 'pkgname = yay\npkgbase = yay\npkgver = 99.0.0-1\npkgdesc = stale fixture\nurl = http://example.invalid\nbuilddate = 0\npackager = ci\nsize = 0\narch = x86_64\ndepend = libbluray.so=3-64\n' > /tmp/fixture/.PKGINFO
           # The fixture only counts once it replaces the real entry in the db.
-          docker run --rm -v /tmp/repo:/repo --entrypoint bash aur-builder:ci \
-            -c 'repo-add /repo/repo.db.tar.gz /repo/yay-99.0.0-1-x86_64.pkg.tar.gz'
+          docker run --rm -v /tmp/repo:/repo -v /tmp/fixture:/fixture:ro \
+            --entrypoint bash aur-builder:ci -c '
+              rm -f /repo/yay-*.pkg.tar.zst
+              tar -czf /repo/yay-99.0.0-1-x86_64.pkg.tar.gz -C /fixture .PKGINFO
+              repo-add /repo/repo.db.tar.gz /repo/yay-99.0.0-1-x86_64.pkg.tar.gz'
           docker run --rm \
             -v /tmp/repo:/repo \
             -v /tmp/aur-cache/pacman:/var/cache/pacman/pkg \
