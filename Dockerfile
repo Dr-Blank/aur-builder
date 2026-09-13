@@ -33,6 +33,13 @@ USER root
 COPY pacman.conf /etc/pacman.conf
 COPY entrypoint.sh /entrypoint.sh
 COPY build.sh /build.sh
+# systemd-nspawn needs the system bus unless it is told to keep its own unit:
+# with --register=no alone it still tries to allocate a transient scope and dies
+# with "Failed to open system bus" in a container that has no systemd/dbus.
+# devtools' arch-nspawn passes --register=no but not --keep-unit, so patch it in.
+RUN sed -i 's/^\(\s*\)--register=no$/\1--register=no\n\1--keep-unit/' /usr/bin/arch-nspawn && \
+    grep -q -- '--keep-unit' /usr/bin/arch-nspawn
+
 RUN curl -sSLf \
         "https://github.com/aptible/supercronic/releases/latest/download/supercronic-linux-amd64" \
         -o /usr/local/bin/supercronic && \
